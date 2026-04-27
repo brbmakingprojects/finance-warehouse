@@ -1,0 +1,52 @@
+version: 2
+
+models:
+  - name: mart_transactions
+    description: "
+      Final wide table for analysis. Joins all dimensions onto the fact table
+      to produce one row per transaction with full customer, merchant, date,
+      and payment context. The primary consumption layer for dashboards and reporting.
+    "
+    columns:
+      - name: transaction_id
+        description: "Primary key — unique per transaction."
+        tests:
+          - unique
+          - not_null
+      - name: amount_gbp
+        description: "Transaction value in GBP."
+        tests:
+          - not_null
+      - name: is_flagged
+        description: "True if the transaction was flagged as potentially fraudulent."
+        tests:
+          - not_null
+      - name: risk_tier
+        description: "Risk classification of the customer who made the transaction."
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['low', 'medium', 'high']
+      - name: transaction_date
+        description: "Calendar date the transaction occurred."
+        tests:
+          - not_null
+
+  - name: mart_flagged_transactions
+    description: "
+      Filtered view of mart_transactions showing only flagged transactions,
+      ordered by amount descending. Designed for fraud review workflows and
+      regulatory reporting use cases.
+    "
+    columns:
+      - name: transaction_id
+        description: "Primary key — unique per flagged transaction."
+        tests:
+          - unique
+          - not_null
+      - name: risk_tier
+        description: "Customer risk tier at time of flagged transaction."
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['low', 'medium', 'high']

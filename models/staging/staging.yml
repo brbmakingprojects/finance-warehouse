@@ -1,0 +1,97 @@
+version: 2
+
+models:
+  - name: stg_customers
+    description: "Cleaned customer dimension from raw.dim_customer. Includes risk tier validation."
+    columns:
+      - name: customer_id
+        description: "Primary key — unique identifier for each customer."
+        tests:
+          - unique
+          - not_null
+      - name: customer_name
+        description: "Trimmed full name of the customer."
+        tests:
+          - not_null
+      - name: risk_tier
+        description: "Customer risk classification. Must be low, medium, or high."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['low', 'medium', 'high']
+
+  - name: stg_merchants
+    description: "Cleaned merchant dimension from raw.dim_merchant."
+    columns:
+      - name: merchant_id
+        description: "Primary key — unique identifier for each merchant."
+        tests:
+          - unique
+          - not_null
+      - name: merchant_name
+        description: "Trading name of the merchant."
+        tests:
+          - not_null
+      - name: merchant_category
+        description: "Business category e.g. Grocery, Fuel, Entertainment."
+        tests:
+          - not_null
+
+  - name: stg_dates
+    description: "Date dimension covering every day in 2024. Used to enrich transactions with time-based attributes."
+    columns:
+      - name: date_id
+        description: "Primary key — surrogate key for each calendar date."
+        tests:
+          - unique
+          - not_null
+      - name: full_date
+        description: "The actual calendar date."
+        tests:
+          - not_null
+
+  - name: stg_payment_methods
+    description: "Cleaned payment method dimension. Distinguishes digital vs physical payment types."
+    columns:
+      - name: payment_method_id
+        description: "Primary key — unique identifier for each payment method."
+        tests:
+          - unique
+          - not_null
+      - name: method_type
+        description: "Payment category e.g. Credit Card, Digital Wallet, Bank Transfer."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Credit Card', 'Debit Card', 'Digital Wallet', 'Bank Transfer']
+
+  - name: stg_transactions
+    description: "Cleaned fact table from raw.fact_transactions. Adds a data_quality_flag field to surface invalid records."
+    columns:
+      - name: transaction_id
+        description: "Primary key — unique identifier for each transaction."
+        tests:
+          - unique
+          - not_null
+      - name: customer_id
+        description: "Foreign key to stg_customers."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_customers')
+              field: customer_id
+      - name: merchant_id
+        description: "Foreign key to stg_merchants."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_merchants')
+              field: merchant_id
+      - name: amount_gbp
+        description: "Transaction value in GBP. Must be greater than zero."
+        tests:
+          - not_null
+      - name: data_quality_flag
+        description: "Quality check result. 'ok' means the record passed all checks."
+        tests:
+          - not_null
